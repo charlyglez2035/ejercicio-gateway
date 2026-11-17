@@ -1,0 +1,1 @@
+Necesito agregarle un API Gateway con nginx a library en la VM, dame lo necesario para que lo hagas
