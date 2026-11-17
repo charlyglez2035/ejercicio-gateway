@@ -71,7 +71,11 @@
   }
 
   async function send(service, method, path, payload, options = {}) {
-    const id = crypto.randomUUID();
+    // randomUUID solo existe en contextos seguros (HTTPS/localhost); el sitio se sirve por HTTP.
+    const id = crypto.randomUUID
+      ? crypto.randomUUID()
+      : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+          (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
     const url = new URL(path, location.origin).href;
     const headers = { 'X-Request-ID': id, Accept: 'application/json' };
     if (payload !== undefined) headers['Content-Type'] = 'application/json';
