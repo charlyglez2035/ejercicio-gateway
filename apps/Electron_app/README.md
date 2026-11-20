@@ -45,9 +45,18 @@ npm start
 
 `npm install` descarga las dependencias. `npm start` abre la ventana de Electron en modo desarrollo.
 
-La URL inicial es `http://34.51.65.146:5001/books`. Se puede cambiar en **Endpoint de libros** y guardar con **Guardar URL**. Para recibir las imágenes almacenadas en la base de datos, usa `http://34.51.65.146:5001/books/cards`. La URL seleccionada queda persistida en `localStorage` para el siguiente inicio.
+## Reverse Proxy (nginx)
 
-El endpoint `/books/cards` devuelve las imágenes en XML como `images/image/image_url`. En el servidor Flask, `MONOLITH_PUBLIC_URL` debe apuntar a la URL pública del monolito, por ejemplo `http://34.51.65.146:3000/`; no debe quedarse en `localhost` si Electron se ejecuta en otro equipo. Si un libro no tiene imagen en el XML, la aplicación muestra automáticamente una portada de stock.
+La app ya no llama al microservicio por su puerto (`:5001`): todo pasa por el Reverse Proxy / API Gateway nginx en el puerto 80 de la VM.
+
+| Endpoint en la app | nginx lo envía a |
+|---|---|
+| `http://34.51.105.144/api/books/books` | books `127.0.0.1:5001/books` |
+| `http://34.51.105.144/api/books/books/cards` | books `127.0.0.1:5001/books/cards` |
+
+La URL inicial es `http://34.51.105.144/api/books/books`. Como la IP de la VM es efímera, se puede cambiar en **Endpoint de libros** y guardar con **Guardar URL**; queda persistida en `localStorage`. Books es público en el gateway, por lo que no requiere JWT.
+
+El endpoint `/books/cards` devuelve las imágenes en XML como `images/image/image_url`. En el servidor Flask, `MONOLITH_PUBLIC_URL` debe apuntar a la URL pública detrás del proxy, por ejemplo `http://34.51.105.144/`; no debe quedarse en `localhost` si Electron se ejecuta en otro equipo. Si un libro no tiene imagen en el XML, la aplicación muestra automáticamente una portada de stock.
 
 ## Uso
 

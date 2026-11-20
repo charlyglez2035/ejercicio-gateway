@@ -26,14 +26,21 @@ if load_dotenv:
 JWT_PATTERN = re.compile(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b")
 SECRET_KEY_PATTERN = re.compile(r"(authorization|cookie|password|token|secret|api[-_]?key|credential)", re.I)
 
-# (clave, etiqueta, variable de entorno, URL por defecto)
+# Todas las peticiones pasan por el Reverse Proxy / API Gateway nginx (puerto 80).
+# nginx enruta /api/<servicio>/<ruta> -> 127.0.0.1:<puerto>/<ruta>; los puertos 5000-5005
+# no se exponen. Se usa LIBRARY_GATEWAY_URL (no las *_SERVICE_URL del .env, que son las
+# URL internas que usa el monolito dentro de la VM).
+DEFAULT_GATEWAY_URL = "http://34.51.105.144"
+GATEWAY_URL = os.getenv("LIBRARY_GATEWAY_URL", DEFAULT_GATEWAY_URL).rstrip("/")
+
+# (clave, etiqueta, prefijo en el gateway)
 SERVICES = (
-    ("login", "Login", "LOGIN_SERVICE_URL", "http://127.0.0.1:5000"),
-    ("users", "Users", "USERS_SERVICE_URL", "http://127.0.0.1:5002"),
-    ("books", "Books", "BOOKS_SERVICE_URL", "http://127.0.0.1:5001"),
-    ("authors", "Authors", "AUTHORS_SERVICE_URL", "http://127.0.0.1:5003"),
-    ("pedidos", "Pedidos", "PEDIDOS_SERVICE_URL", "http://127.0.0.1:5004"),
-    ("pagos", "Pagos", "PAGOS_SERVICE_URL", "http://127.0.0.1:5005"),
+    ("login", "Login", "/api/login"),
+    ("users", "Users", "/api/users"),
+    ("books", "Books", "/api/books"),
+    ("authors", "Authors", "/api/authors"),
+    ("pedidos", "Pedidos", "/api/pedidos"),
+    ("pagos", "Pagos", "/api/pagos"),
 )
 try:
     TIMEOUT_SECONDS = float(os.getenv("SERVICE_TIMEOUT_SECONDS", "10"))
@@ -105,7 +112,8 @@ class LibraryClient:
         self.user = None
         self.token_lock = threading.Lock()
         self.results = queue.Queue()
-        self.urls = {key: StringVar(value=os.getenv(env, default)) for key, _label, env, default in SERVICES}
+        self.gateway = StringVar(value=GATEWAY_URL)
+        self.urls = {key: StringVar(value=GATEWAY_URL + prefix) for key, _label, prefix in SERVICES}
         self.identity = StringVar()
         self.password = StringVar()
         self.without_token = BooleanVar(value=False)
@@ -165,12 +173,16 @@ class LibraryClient:
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(2, weight=1)
 
-        urls = ttk.LabelFrame(frame, text="Servicios (semaforos de disponibilidad)")
+        urls = ttk.LabelFrame(frame, text="Reverse Proxy nginx y servicios (semaforos de disponibilidad)")
         urls.grid(row=0, column=0, sticky="ew", pady=(0, 6))
         urls.columnconfigure(2, weight=1)
         urls.columnconfigure(5, weight=1)
-        for index, (key, label, _env, _default) in enumerate(SERVICES):
+        ttk.Label(urls, text="Gateway").grid(row=0, column=1, sticky="w", pady=4)
+        ttk.Entry(urls, textvariable=self.gateway).grid(row=0, column=2, columnspan=2, sticky="ew", padx=(0, 6))
+        ttk.Button(urls, text="Aplicar gateway", command=self._apply_gateway).grid(row=0, column=4, sticky="w")
+        for index, (key, label, _prefix) in enumerate(SERVICES):
             row, column = divmod(index, 2)
+            row += 1
             light = Canvas(urls, width=18, height=18, highlightthickness=0)
             dot = light.create_oval(2, 2, 16, 16, fill=LIGHT_COLORS["off"], outline="")
             light.grid(row=row, column=column * 3, padx=(8, 2), pady=4)
@@ -178,7 +190,7 @@ class LibraryClient:
             ttk.Label(urls, text=label, width=8).grid(row=row, column=column * 3 + 1, sticky="w")
             ttk.Entry(urls, textvariable=self.urls[key]).grid(row=row, column=column * 3 + 2, sticky="ew", padx=(0, 12))
         ttk.Button(urls, text="Comprobar servicios", command=self._check_health).grid(
-            row=3, column=0, columnspan=6, sticky="w", padx=8, pady=6)
+            row=4, column=0, columnspan=6, sticky="w", padx=8, pady=6)
 
         auth = ttk.LabelFrame(frame, text="Autenticacion")
         auth.grid(row=1, column=0, sticky="ew", pady=6)
@@ -518,8 +530,19 @@ class LibraryClient:
         ttk.Button(dialog, text="Registrar", command=register).grid(row=len(fields), column=1, padx=8, pady=10, sticky="e")
         dialog.columnconfigure(1, weight=1)
 
+    def _apply_gateway(self):
+        """Recalcula las URL de todos los servicios a partir de la URL del gateway (IP efimera)."""
+        base = self.gateway.get().strip().rstrip("/")
+        parts = urllib.parse.urlsplit(base)
+        if parts.scheme not in ("http", "https") or not parts.hostname:
+            messagebox.showerror("Gateway", "Escribe una URL valida, por ejemplo http://34.51.105.144")
+            return
+        for key, _label, prefix in SERVICES:
+            self.urls[key].set(base + prefix)
+        self._check_health()
+
     def _check_health(self):
-        for key, _label, _env, _default in SERVICES:
+        for key, _label, _prefix in SERVICES:
             light, dot = self.health_lights[key]
             light.itemconfigure(dot, fill=LIGHT_COLORS["off"])
 
@@ -769,7 +792,9 @@ class LibraryClient:
 
     def _send(self, service, method, url, payload, use_auth):
         request_id = str(uuid.uuid4())
-        headers = {"Accept": "application/json", "X-Request-ID": request_id}
+        # El User-Agent identifica a esta app en el access log del Reverse Proxy nginx.
+        headers = {"Accept": "application/json", "X-Request-ID": request_id,
+                   "User-Agent": "library-tk-desktop/1.0"}
         if payload is not None:
             headers["Content-Type"] = "application/json"
         with self.token_lock:

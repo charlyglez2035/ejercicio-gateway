@@ -118,7 +118,15 @@ Registro sigue usando los campos `nombre`, `apellido_paterno`, `apellido_materno
 - `apps/services/shared/service.py`: base comun de users, authors, pedidos y pagos (env, CORS, JSON/XML, errores, health).
 - `apps/services/shared/orders.py`: reglas de estado y stock compartidas por pedidos y pagos.
 - `apps/services/{users,authors,pedidos,pagos}/app.py`: microservicios nuevos.
-- `apps/Python_app/tkinter_client.py`: cliente Tkinter de todos los servicios.
+- `apps/Python_app/tkinter_client.py`: cliente Tkinter de todos los servicios (via Reverse Proxy).
+- `apps/Electron_app`: catalogo XML de escritorio en Electron (via Reverse Proxy).
+- `apps/Java_app`: cliente de escritorio Java Swing (via Reverse Proxy).
+- `infra/nginx`: Reverse Proxy / API Gateway nginx (`library-gateway.conf`, `install_gateway.sh`).
+- `evidencias_reverse_proxy/`, `REFLEXION_REVERSE_PROXY.md`, `scripts_vm/evidencia_reverse_proxy.sh`: entrega final.
+
+## Apps de escritorio y Reverse Proxy
+
+Electron, PythonTK y Java usan una sola URL base, la del gateway nginx (por defecto `http://34.51.105.144`, puerto 80). Arman las rutas `/api/<servicio>/...` y nunca llaman a los puertos 3000 ni 5000-5005. Cada app tiene un `User-Agent` propio (`library-electron-desktop`, `library-tk-desktop`, `library-java-desktop`) para identificarla en `/var/log/nginx/library-gateway.access.log`.
 - `db/scheme.sql`: esquema PostgreSQL inicial.
 - `db/orders-payments.sql`: migracion aditiva de pedidos, lineas y pagos.
 - `db/jwt-revocations.sql`: migracion historica de revocacion (sustituida por Redis).

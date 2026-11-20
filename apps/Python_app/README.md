@@ -53,6 +53,29 @@ El script genera `evidencias/cycle_local.json` y `evidencias/cycle_remote.json`.
 
 La URL documentada para la evidencia remota es `http://34.51.65.146:5001`. Durante la captura del 22 de septiembre de 2026, el host no respondió dentro del timeout; ese resultado está documentado en la bitácora y no se presenta como ejecución exitosa.
 
+## Cliente de escritorio Tkinter detrás del Reverse Proxy
+
+`tkinter_client.py` es la app de escritorio (PythonTK). Ya no usa los puertos 5000-5005: todas sus peticiones pasan por el Reverse Proxy nginx en el puerto 80 de la VM.
+
+```bash
+pip install python-dotenv   # opcional
+python apps/Python_app/tkinter_client.py
+# otra IP:  LIBRARY_GATEWAY_URL=http://<IP_VM> python apps/Python_app/tkinter_client.py
+```
+
+Por defecto usa `http://34.51.105.144`. En la pestaña **Login** puedes cambiar la IP en **Gateway** y pulsar **Aplicar gateway**.
+
+| Servicio | URL base en el cliente | Destino interno (nginx) | Acceso en el gateway |
+|---|---|---|---|
+| Login | `/api/login` | `:5000` | `login`, `register` y `refresh` son públicos; el resto pide JWT |
+| Books | `/api/books` | `:5001` | público |
+| Users | `/api/users` | `:5002` | JWT |
+| Authors | `/api/authors` | `:5003` | JWT |
+| Pedidos | `/api/pedidos` | `:5004` | JWT |
+| Pagos | `/api/pagos` | `:5005` | JWT |
+
+Después del login, el cliente manda `Authorization: Bearer <JWT>` en todas las rutas protegidas. Con **Omitir JWT** puedes ver el 401 que responde el gateway.
+
 ## Seguridad
 
 No subas `.env`, contraseñas, tokens ni contraseñas de aplicación. Usa `.env.example` como plantilla.

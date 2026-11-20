@@ -1,6 +1,8 @@
-// Via API Gateway nginx (puerto 80). Si la IP efimera de la VM cambia, actualizala desde la app.
-const DEFAULT_ENDPOINT = 'http://34.51.115.157/api/books/books';
-const STORAGE_KEY = 'library.endpoint';
+// Via Reverse Proxy / API Gateway nginx (puerto 80): nunca se llama directo al puerto 5001.
+// nginx: /api/books/<ruta> -> books :5001/<ruta>. Si la IP efimera de la VM cambia, actualizala desde la app.
+const DEFAULT_ENDPOINT = 'http://34.51.105.144/api/books/books';
+// Clave nueva para no reutilizar endpoints guardados con IP/puertos anteriores.
+const STORAGE_KEY = 'library.gateway.endpoint';
 
 class BookModel {
   constructor(api) {

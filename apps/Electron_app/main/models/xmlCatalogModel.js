@@ -7,7 +7,8 @@ async function fetchXml(endpoint) {
   let response;
   try {
     response = await fetch(url, {
-      headers: { Accept: 'application/xml, text/xml' },
+      // El User-Agent identifica a esta app en el access log del Reverse Proxy nginx.
+      headers: { Accept: 'application/xml, text/xml', 'User-Agent': 'library-electron-desktop/1.0' },
       signal: AbortSignal.timeout(15000)
     });
   } catch (error) {

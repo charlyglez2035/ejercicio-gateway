@@ -24,7 +24,7 @@ ipcMain.handle('fetch-xml', (_event, endpoint) => fetchXml(endpoint));
 
 app.whenReady().then(() => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    callback({ responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': ["default-src 'self'; img-src 'self' https: data:; style-src 'self'; script-src 'self'"] } });
+    callback({ responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': ["default-src 'self'; img-src 'self' http: https: data:; style-src 'self'; script-src 'self'"] } });
   });
   createWindow();
   app.on('activate', () => {

@@ -16,6 +16,9 @@ __pycache__/
 
 apps/web-monolito/public/uploads/*
 logs/
+# Compilados del cliente Java (se generan con run.ps1 / run.sh)
+apps/Java_app/out/
+apps/Java_app/*.jar
 *.log
 # Volcado local de peticiones (contiene datos personales)
 lol.txt
