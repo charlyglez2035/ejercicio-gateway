@@ -16,7 +16,7 @@ El punto de partida fue Library: un monolito web (Node, puerto 3000) y seis micr
 ## Ventajas identificadas
 
 - **Un solo punto de entrada.** Las apps conocen una sola URL y un solo puerto. Si cambia la IP efímera de la VM, se actualiza en un campo en lugar de seis. Si un servicio cambia de puerto, solo se toca nginx y los clientes no se recompilan.
-- **Menos superficie expuesta.** Los clientes solo necesitan el puerto 80. El siguiente paso natural es quitar la regla de firewall que abría 3000 y 5000-5005 (creada en un ejercicio anterior para las pruebas de Locust), para que los microservicios solo se alcancen a través de nginx.
+- **Menos superficie expuesta.** Los clientes solo necesitan el puerto 80. Al final borré las reglas de firewall de ejercicios anteriores que abrían 3000 y 5000-5005. Ahora los microservicios solo se alcanzan a través de nginx: los puertos directos aparecen cerrados desde fuera (evidencia 03).
 - **Seguridad centralizada.** La validación del JWT y el límite de peticiones se aplican igual a todos los clientes (web, Electron, Tkinter y Java), sin repetir lógica en cada uno. Los microservicios siguen validando JWT y rol, así que hay defensa en profundidad.
 - **Trazabilidad.** El `X-Request-ID` aparece en la respuesta, en el log de la app y en el log de nginx, y con eso se sigue una petición de punta a punta. El User-Agent indica qué app la hizo.
 - **Clientes más simples.** Las tres apps comparten el mismo contrato de rutas (`/api/<servicio>/...`), sin importar el lenguaje.

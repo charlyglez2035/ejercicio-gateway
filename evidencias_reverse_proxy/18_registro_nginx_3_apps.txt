@@ -1,0 +1,74 @@
+﻿### 2026-11-20 21:08:54 UTC | maquina02 | commit 3b14fee Apps de escritorio (Electron, Tkinter, Java) via Reverse Proxy nginx + evidencias y reflexion
+
+### systemctl status nginx
+● nginx.service - The nginx HTTP and reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: disabled)
+     Active: active (running) since Fri 2026-11-20 20:15:36 UTC; 53min ago
+ Invocation: cd0782d232c5495c85247878b4c2a952
+    Process: 1017 ExecStartPre=/usr/bin/rm -f /run/nginx.pid (code=exited, status=0/SUCCESS)
+    Process: 1022 ExecStartPre=/usr/sbin/nginx -t (code=exited, status=0/SUCCESS)
+
+### Config instalada = config del repo
+/etc/nginx/conf.d/library-gateway.conf identico a infra/nginx/library-gateway.conf
+
+### curl al gateway desde la VM
+HTTP/1.1 200 OK
+X-Request-ID: c7cc2c2b0514031d30f06c67659106de
+{"status":"ok","gateway":"nginx"}
+
+### scripts_vm/evidencia_reverse_proxy.sh
+===== nginx =====
+active
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+===== Puertos: solo :80 es publico; 3000/5000-5005 escuchan en la VM =====
+State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess                                                                         
+LISTEN 0      511          0.0.0.0:3000      0.0.0.0:*    users:(("node",pid=3190,fd=18))                                                
+LISTEN 0      511          0.0.0.0:80        0.0.0.0:*    users:(("nginx",pid=1148,fd=8),("nginx",pid=1147,fd=8),("nginx",pid=1146,fd=8))
+LISTEN 0      128          0.0.0.0:5004      0.0.0.0:*    users:(("python",pid=3176,fd=3))                                               
+LISTEN 0      128          0.0.0.0:5005      0.0.0.0:*    users:(("python",pid=3177,fd=3))                                               
+LISTEN 0      128          0.0.0.0:5002      0.0.0.0:*    users:(("python",pid=3174,fd=3))                                               
+LISTEN 0      128          0.0.0.0:5003      0.0.0.0:*    users:(("python",pid=3175,fd=3))                                               
+LISTEN 0      128          0.0.0.0:5000      0.0.0.0:*    users:(("python",pid=3172,fd=3))                                               
+LISTEN 0      128          0.0.0.0:5001      0.0.0.0:*    users:(("python",pid=3173,fd=3))                                               
+LISTEN 0      511             [::]:80           [::]:*    users:(("nginx",pid=1148,fd=9),("nginx",pid=1147,fd=9),("nginx",pid=1146,fd=9))
+
+===== Java Swing (User-Agent ~ library-java-desktop) =====
+189.159.109.119 - - [20/Nov/2026:21:05:22 +0000] "GET /api/books/health?format=json HTTP/1.1" 200 158 "-" "library-java-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:05:22 +0000] "GET /api/login/health?format=json HTTP/1.1" 200 258 "-" "library-java-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:05:22 +0000] "GET /api/users/health?format=json HTTP/1.1" 200 102 "-" "library-java-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:05:22 +0000] "GET /api/authors/health?format=json HTTP/1.1" 200 102 "-" "library-java-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:05:22 +0000] "GET /api/pedidos/health?format=json HTTP/1.1" 200 102 "-" "library-java-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:05:22 +0000] "GET /api/pagos/health?format=json HTTP/1.1" 200 102 "-" "library-java-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:05:23 +0000] "GET /api/books/books?format=json HTTP/1.1" 200 3946 "-" "library-java-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:05:24 +0000] "POST /api/login/login?format=json HTTP/1.1" 200 1075 "-" "library-java-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:05:25 +0000] "GET /api/authors/authors?format=json HTTP/1.1" 200 568 "-" "library-java-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:05:27 +0000] "GET /api/pedidos/pedidos?format=json HTTP/1.1" 200 3 "-" "library-java-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:05:29 +0000] "GET /api/login/session?format=json HTTP/1.1" 200 371 "-" "library-java-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:05:32 +0000] "GET /api/authors/authors?format=json HTTP/1.1" 401 69 "-" "library-java-desktop/1.0"
+
+===== PythonTK (User-Agent ~ library-tk-desktop) =====
+189.159.109.119 - - [20/Nov/2026:21:07:45 +0000] "GET /api/books/health?format=json HTTP/1.1" 200 158 "-" "library-tk-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:07:45 +0000] "GET /api/pedidos/health?format=json HTTP/1.1" 200 124 "-" "library-tk-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:07:45 +0000] "GET /api/authors/health?format=json HTTP/1.1" 200 102 "-" "library-tk-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:07:45 +0000] "GET /api/users/health?format=json HTTP/1.1" 200 102 "-" "library-tk-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:07:45 +0000] "GET /api/pagos/health?format=json HTTP/1.1" 200 102 "-" "library-tk-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:07:45 +0000] "GET /api/login/health?format=json HTTP/1.1" 200 280 "-" "library-tk-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:07:50 +0000] "GET /api/books/api/books?format=json HTTP/1.1" 200 3946 "-" "library-tk-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:07:56 +0000] "POST /api/login/login?format=json HTTP/1.1" 200 1075 "-" "library-tk-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:07:58 +0000] "GET /api/authors/authors?format=json HTTP/1.1" 200 568 "-" "library-tk-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:08:03 +0000] "GET /api/pedidos/pedidos?format=json HTTP/1.1" 401 69 "-" "library-tk-desktop/1.0"
+
+===== Electron (User-Agent ~ library-electron-desktop) =====
+189.159.109.119 - - [20/Nov/2026:21:00:50 +0000] "GET /api/books/books HTTP/1.1" 200 5200 "-" "library-electron-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:01:14 +0000] "GET /api/books/books HTTP/1.1" 200 5200 "-" "library-electron-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:06:13 +0000] "GET /api/books/books HTTP/1.1" 200 5200 "-" "library-electron-desktop/1.0"
+189.159.109.119 - - [20/Nov/2026:21:06:17 +0000] "GET /api/books/books/cards HTTP/1.1" 200 3708 "-" "library-electron-desktop/1.0"
+
+===== Codigos HTTP por cliente (ultimas 500 lineas) =====
+     12 200 library-java-desktop/1.0
+      9 200 library-tk-desktop/1.0
+      4 200 library-electron-desktop/1.0
+      1 401 library-tk-desktop/1.0
+      1 401 library-java-desktop/1.0
